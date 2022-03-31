@@ -9,6 +9,6 @@ namespace MusicBot.Core
     public static class AppConstant
     {
         public const string DiscordUrl = "https://discord.com/api";
-        public const string DiscordToken = "OTU3NjY3NjQzMDA2MDAxMTky.YkCHfg.V5z1wZGJD_KYUU6Su4xXTNAYNiM";
+        public const string DiscordToken = "OTU3NjY3NjQzMDA2MDAxMTky.YkCHfg.KMxlWLKAWJzJ-GIQnmgvCI27neQ";
     }
 }

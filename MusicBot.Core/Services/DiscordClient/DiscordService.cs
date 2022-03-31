@@ -1,6 +1,9 @@
 ﻿using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
+using MusicBot.Core.Database;
 using MusicBot.Core.Services.DiscordClient.Models;
+using MusicBot.Core.Services.DiscordClient.Models.Request;
+using MusicBot.Core.Services.DiscordService;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
@@ -15,42 +18,47 @@ namespace MusicBot.Core.Services.DiscordClient
     public class DiscordService : IDiscordService
     {
         private readonly RestClient _rest;
-        private readonly DiscordSocketClient _client;
+        private readonly WebsocketClient _client;
+        private readonly ResponseService _service;
+        private readonly ApplicationDbContext _context;
         private ILogger log;
 
-        public DiscordService()
+        public DiscordService(ApplicationDbContext context)
         {
+            _context = context;
             _rest = new RestClient(AppConstant.DiscordUrl);
-            _client = new DiscordSocketClient();
+            _client = new WebsocketClient(new Uri("wss://gateway.discord.gg?v=9&encoding=json"));
+            _service = new ResponseService(_context);
         }
 
-        public async void Connect(Func<object> func)
+        public async void Connect()
         {
             try
             {
                 var exitEvent = new ManualResetEvent(false);
 
-                var client = new WebsocketClient(new Uri("wss://gateway.discord.gg?v=9&encoding=json"));
-
-                client.ReconnectTimeout = TimeSpan.FromSeconds(30);
-                client.ReconnectionHappened.Subscribe(info =>
+                _client.ReconnectTimeout = TimeSpan.FromSeconds(30);
+                _client.ReconnectionHappened.Subscribe(info =>
                     log.LogWarning($"Reconnection happened, type: {info.Type}"));
 
 
-                client.MessageReceived.Subscribe(msg => {
-                    log.LogWarning($"{msg}");
+                _client.MessageReceived.Subscribe(msg => {
+                    _service.ReadResponse(msg);
+                    log.LogWarning(msg.Text);
                 });
 
-                client.Start();
+                _client.Start();
 
                 var startTimeSpan = TimeSpan.Zero;
-                var periodTimeSpan = TimeSpan.FromMinutes(5);
+                var periodTimeSpan = TimeSpan.FromMilliseconds(41250 / 2);
 
                 var timer = new System.Threading.Timer((e) =>
                 {
-                    client.Send("{\"op\"}");
+                    _client.Send("{\"op\": 1, \"d\": 11}");
+                    log.LogError("Heartbeat!");
                 }, null, startTimeSpan, periodTimeSpan);
 
+                Identify();
 
                 exitEvent.WaitOne();
 
@@ -62,23 +70,25 @@ namespace MusicBot.Core.Services.DiscordClient
             }
         }
 
-        public async Task<List<Guild>> GetGuilds()
+        public async void Identify()
         {
-            var request = new DiscordRequest()
+            var identify = new IdentifyPayload()
             {
-                Resource = "/v6/users/@me/guilds",
-                HttpMethod = Method.Get
-            }.CreateRequest();
+                Op = 2,
+                Data = new IdentifyPayloadData()
+                {
+                    Intents = 513,
+                    Token = AppConstant.DiscordToken,
+                    Properties = new Properties()
+                    {
+                        Os = "linux",
+                        Browser = "my_library",
+                        Device = "my_library"
+                    }
+                }
+            };
 
-            var x =_client.GetGuild(595353831919845407);
-
-            var response = await _rest.ExecuteAsync(request);
-
-            if (!response.IsSuccessful)
-                throw new Exception("Nie udało się pobrać gildii");
-
-            var responseModel = JsonConvert.DeserializeObject<List<Guild>>(response.Content);
-            return responseModel;
+            _client.SendPayload(identify);
         }
 
         public void UseLogger(ILogger logger)
@@ -105,6 +115,10 @@ namespace MusicBot.Core.Services.DiscordClient
                 restRequest.AddJsonBody(request.Body);
 
             return restRequest;
+        }
+        public static void SendPayload(this WebsocketClient client, Payload payload)
+        {
+            client.Send(JsonConvert.SerializeObject(payload));
         }
     }
 }

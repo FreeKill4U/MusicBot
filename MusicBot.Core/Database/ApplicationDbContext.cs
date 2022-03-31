@@ -12,7 +12,7 @@ namespace MusicBot.Core.Database
                 : base(options)
         {
         }
-        public virtual DbSet<Guild> Guilds { get; set; }
+        public virtual DbSet<GuildEntity> Guilds { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

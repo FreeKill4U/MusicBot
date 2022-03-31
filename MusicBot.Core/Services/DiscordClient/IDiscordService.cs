@@ -1,4 +1,5 @@
-﻿using MusicBot.Core.Services.DiscordClient.Models;
+﻿using Microsoft.Extensions.Logging;
+using MusicBot.Core.Services.DiscordClient.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,8 @@ namespace MusicBot.Core.Services.DiscordClient
 {
     public interface IDiscordService
     {
-        public void Connect(Func<object> func);
-        public Task<List<Guild>> GetGuilds();
+        public void Connect();
+        public void Identify();
+        public void UseLogger(ILogger logger);
     }
 }
