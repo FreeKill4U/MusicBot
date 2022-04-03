@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicBot", "MusicBot\MusicB
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicBot.Core", "MusicBot.Core\MusicBot.Core.csproj", "{21AF6EC8-275D-42BD-A25E-BD676F994FC8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicBot.WebSocket", "MusicBot.WebSocket\MusicBot.WebSocket.csproj", "{28FE5497-402A-41A2-A15D-1E74237D7C95}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{21AF6EC8-275D-42BD-A25E-BD676F994FC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{21AF6EC8-275D-42BD-A25E-BD676F994FC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{21AF6EC8-275D-42BD-A25E-BD676F994FC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{28FE5497-402A-41A2-A15D-1E74237D7C95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28FE5497-402A-41A2-A15D-1E74237D7C95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28FE5497-402A-41A2-A15D-1E74237D7C95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28FE5497-402A-41A2-A15D-1E74237D7C95}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

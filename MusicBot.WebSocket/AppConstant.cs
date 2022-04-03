@@ -12,6 +12,7 @@ namespace MusicBot.Core
     {
         public const string DiscordUrl = "https://discord.com/api/v9";
         public const string DiscordToken = "OTU3NjY3NjQzMDA2MDAxMTky.YkCHfg.0Cnpw50J2eodkR07BdomCy1RBAs";
+        public const string BotName = "Liber";
     }
 
     public class Statistics

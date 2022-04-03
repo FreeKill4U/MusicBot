@@ -20,8 +20,7 @@ namespace MusicBot
         [FunctionName("Function1")]
         public void Run([TimerTrigger("* * * */2 * *", RunOnStartup = true)] TimerInfo myTimer, ILogger log)
         {
-            _discord.UseLogger(log);
-            _discord.Connect();
+            //_discord.UseLogger(log);
         }
     }
 }

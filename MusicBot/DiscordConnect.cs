@@ -29,8 +29,6 @@ namespace MusicBot
             ILogger log)
         {
             _discord.UseLogger(log);
-            _discord.Connect();
-
             return new OkObjectResult("");
         }
     }

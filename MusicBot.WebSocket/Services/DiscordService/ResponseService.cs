@@ -2,12 +2,15 @@
 using MusicBot.Core.Database;
 using MusicBot.Core.Services.DiscordClient;
 using MusicBot.Core.Services.DiscordService.Models;
+using MusicBot.WebSocket;
+using MusicBot.WebSocket.Services.DiscordService.Models;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Websocket.Client;
 
@@ -30,9 +33,9 @@ namespace MusicBot.Core.Services.DiscordService
 
             if(response.Op == 0)
             {
-                if(response.Command == "READY") Task.Run(() => ready(msg.Text));
-                //if(response.Command == "GUILD_CREATE") Task.Run(() => guildCreate(msg.Text));
-                if(response.Command == "GUILD_CREATE") guildCreate(msg.Text);
+                if (response.Command == "READY")  ready(msg.Text);
+                else if (response.Command == "GUILD_CREATE") Task.Run(() => guildCreate(msg.Text));
+                else if (response.Command == "MESSAGE_CREATE") Task.Run(() => messegeCreate(msg.Text));
             }
             
         }
@@ -66,6 +69,7 @@ namespace MusicBot.Core.Services.DiscordService
 
             context.SaveChanges();
             _statistic.IsReady = true;
+            Writter.Error($"{_statistic.Bot.Username} is ready to work!");
         }
         private async void guildCreate(string msg)
         {
@@ -127,6 +131,28 @@ namespace MusicBot.Core.Services.DiscordService
             }
 
             context.SaveChanges();
+            Writter.Info($"{AppConstant.BotName} has been added to the guild \"{guild.Name}\"[{guild.ExternalId}]");
+        }
+
+        private void messegeCreate(string msg)
+        {
+            var data = JsonConvert.DeserializeObject<MessegeCreateResponse>(msg)?.Data;
+
+            var context = new ApplicationDbContext(new DbContextOptions<ApplicationDbContext>());
+
+            if (Regex.IsMatch(data.Content, @"^\/[a-zA-Z]* "))
+            {
+                var match = Regex.Match(data.Content, @"^\/[a-zA-Z]* ");
+                if(match == null) return;
+
+                var commend = Regex.Replace(match.Value, @"\/| ", "");
+
+                if(commend == "p") _api.SendMessege(Regex.Replace(data.Content, @"^\/[a-zA-Z]* ", ""), data.ChannelId);
+                if(commend == "qp") _api.SendMessege("test", data.ChannelId);
+
+
+                Writter.Info($"{_statistic.Bot.Username} answer {data.Author.Username} in channel [{data.ChannelId}]!");
+            }
         }
     }
 }
