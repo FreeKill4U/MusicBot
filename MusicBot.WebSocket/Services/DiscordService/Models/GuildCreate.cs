@@ -164,6 +164,39 @@ namespace MusicBot.Core.Services.DiscordService.Models
         public bool Deaf { get; set; }
     }
 
+    public class VoiceState
+    {
+        [JsonProperty("user_id")]
+        public string UserId { get; set; }
+
+        [JsonProperty("suppress")]
+        public bool Suppress { get; set; }
+
+        [JsonProperty("session_id")]
+        public string SessionId { get; set; }
+
+        [JsonProperty("self_video")]
+        public bool SelfVideo { get; set; }
+
+        [JsonProperty("self_mute")]
+        public bool SelfMute { get; set; }
+
+        [JsonProperty("self_deaf")]
+        public bool SelfDeaf { get; set; }
+
+        [JsonProperty("request_to_speak_timestamp")]
+        public object RequestToSpeakTimestamp { get; set; }
+
+        [JsonProperty("mute")]
+        public bool Mute { get; set; }
+
+        [JsonProperty("deaf")]
+        public bool Deaf { get; set; }
+
+        [JsonProperty("channel_id")]
+        public string ChannelId { get; set; }
+    }
+
     public class GuildCreate
     {
         [JsonProperty("verification_level")]
@@ -290,7 +323,7 @@ namespace MusicBot.Core.Services.DiscordService.Models
         public string Icon { get; set; }
 
         [JsonProperty("voice_states")]
-        public List<object> VoiceStates { get; set; }
+        public List<VoiceState> VoiceStates { get; set; }
 
         [JsonProperty("emojis")]
         public List<object> Emojis { get; set; }

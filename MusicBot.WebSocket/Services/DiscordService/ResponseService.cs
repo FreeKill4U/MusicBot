@@ -13,6 +13,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Websocket.Client;
+using MusicBot.WebSocket.Database;
 
 namespace MusicBot.Core.Services.DiscordService
 {
@@ -20,6 +21,14 @@ namespace MusicBot.Core.Services.DiscordService
     {
         private Statistics _statistic = new Statistics();
         private readonly IDiscordApi _api;
+
+        private string msg;
+
+        private Task guildCreateTask = new Task(() => {});
+        private Task readyTask;
+        private Task messageCreateTask;
+
+
         public ResponseService(IDiscordApi api)
         {
             _api = api;
@@ -33,9 +42,19 @@ namespace MusicBot.Core.Services.DiscordService
 
             if(response.Op == 0)
             {
-                if (response.Command == "READY")  ready(msg.Text);
-                else if (response.Command == "GUILD_CREATE") Task.Run(() => guildCreate(msg.Text));
+                if (response.Command == "READY") ready(msg.Text);
+                else if (response.Command == "GUILD_CREATE")
+                {
+                    Task.Run(() =>
+                    {
+                        while (guildCreateTask.Status != TaskStatus.Created) { }
+
+                        guildCreateTask = new Task(() => guildCreate(msg.Text));
+                        guildCreateTask.Start();
+                    });
+                }
                 else if (response.Command == "MESSAGE_CREATE") Task.Run(() => messegeCreate(msg.Text));
+                else if (response.Command == "VOICE_STATE_UPDATE") Task.Run(() => voiceStateUpdate(msg.Text));
             }
             
         }
@@ -74,7 +93,7 @@ namespace MusicBot.Core.Services.DiscordService
         private async void guildCreate(string msg)
         {
 
-            var data = JsonConvert.DeserializeObject<GuildCreateResponse>(msg).Data;
+            var data = JsonConvert.DeserializeObject<GuildCreateResponse>(msg)?.Data;
 
             var channels = await _api.GetChannels(data.Id);
             var context = new ApplicationDbContext(new DbContextOptions<ApplicationDbContext>());
@@ -83,7 +102,34 @@ namespace MusicBot.Core.Services.DiscordService
             var guild = context.Guilds
                 .Include(r => r.Channels)
                 .FirstOrDefault(r => r.ExternalId == data.Id);
-            
+
+            var users = await _api.GetUsers(data.Id);
+            var usersDB = context.Users.Where(r => data.Members.Select(x => x.User.Id).Contains(r.ExternalId)).ToList();
+
+            var usersDoesntExistsInDB = new List<UserEntity>();
+
+            foreach(var user in users.Where(r => !usersDB.Select(x => x.ExternalId).Contains(r.User.Id)).ToList())
+            {
+                usersDoesntExistsInDB.Add(new UserEntity()
+                {
+                    ExternalId = user.User.Id,
+                    Name = user.User.Username,
+                    ChannelId = data.VoiceStates.FirstOrDefault(r => r.UserId == user.User.Id)?.ChannelId
+                });
+                Writter.Info($"User {user.User.Username} [{user.User.Id}] has been added to the database");
+            }
+
+            context.Users.AddRange(usersDoesntExistsInDB);
+
+
+            foreach(var voiceState in data.VoiceStates)
+            {
+                var user = usersDB.FirstOrDefault(r => r.ExternalId == voiceState.UserId);
+                if(user != null)
+                    user.ChannelId = voiceState.ChannelId;
+            }
+
+
             if(guild == null && true)
             {
                 guild = new GuildEntity()
@@ -130,15 +176,29 @@ namespace MusicBot.Core.Services.DiscordService
                 }
             }
 
-            context.SaveChanges();
-            Writter.Info($"{AppConstant.BotName} has been added to the guild \"{guild.Name}\"[{guild.ExternalId}]");
-        }
+            try
+            {
+                context.SaveChanges();
+            }
+            catch(Exception ex)
+            {
 
+            }
+            
+            Writter.Info($"{AppConstant.BotName} has been added to the guild \"{guild.Name}\"[{guild.ExternalId}]");
+            guildCreateTask = new Task(() => { });
+        }
         private void messegeCreate(string msg)
         {
             var data = JsonConvert.DeserializeObject<MessegeCreateResponse>(msg)?.Data;
 
             var context = new ApplicationDbContext(new DbContextOptions<ApplicationDbContext>());
+
+            var guilds = context.Guilds
+                            .Include(r => r.Channels)
+                            .ToList();
+            if (guilds.Count < 0)
+                throw new Exception($"{_statistic.Bot.Username} cant get guilds from database!");
 
             if (Regex.IsMatch(data.Content, @"^\/[a-zA-Z]* "))
             {
@@ -148,11 +208,30 @@ namespace MusicBot.Core.Services.DiscordService
                 var commend = Regex.Replace(match.Value, @"\/| ", "");
 
                 if(commend == "p") _api.SendMessege(Regex.Replace(data.Content, @"^\/[a-zA-Z]* ", ""), data.ChannelId);
-                if(commend == "qp") _api.SendMessege("test", data.ChannelId);
-
+                if(commend == "join")
+                {
+                    guilds.FirstOrDefault();
+                    //_api.Join(data.ChannelId);
+                }
 
                 Writter.Info($"{_statistic.Bot.Username} answer {data.Author.Username} in channel [{data.ChannelId}]!");
             }
+        }
+        private void voiceStateUpdate(string msg)
+        {
+
+
+            var data = JsonConvert.DeserializeObject<VoiceStateResponse>(msg)?.Data;
+            
+            var context = new ApplicationDbContext(new DbContextOptions<ApplicationDbContext>());
+
+            var user = context.Users.FirstOrDefault(x => x.ExternalId == data.UserId);
+
+            user.ChannelId = data.ChannelId;
+
+            Writter.Info($"User {user.Name} [{user.ExternalId}] change channel to [{data.ChannelId}]!");
+
+            context.SaveChanges();
         }
     }
 }

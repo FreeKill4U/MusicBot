@@ -11,5 +11,7 @@ namespace MusicBot.Core.Services.DiscordClient
     {
         Task<List<Channel>> GetChannels(string channelId);
         Task<bool> SendMessege(string content, string channelId);
+        void Join(string channelId, string guildId);
+        Task<List<Member>> GetUsers(string guildId);
     }
 }

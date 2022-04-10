@@ -18,7 +18,7 @@ namespace MusicBot.Core.Services.DiscordClient
     public class DiscordService
     {
         private readonly RestClient _rest;
-        private readonly WebsocketClient _client;
+        public static WebsocketClient Client;
         private readonly IResponseService _service;
         private readonly ApplicationDbContext _context;
         private ILogger log;
@@ -27,7 +27,7 @@ namespace MusicBot.Core.Services.DiscordClient
         {
             _context = context;
             _rest = new RestClient(AppConstant.DiscordUrl);
-            _client = new WebsocketClient(new Uri("wss://gateway.discord.gg?v=9&encoding=json"));
+            Client = new WebsocketClient(new Uri("wss://gateway.discord.gg?v=9&encoding=json"));
             _service = service;
             log = logger;
         }
@@ -36,19 +36,23 @@ namespace MusicBot.Core.Services.DiscordClient
         {
             try
             {
+                _context.Users.ToList().ForEach(u => u.ChannelId = null);
+                _context.SaveChanges();
+
                 Writter.Init();
                 var exitEvent = new ManualResetEvent(false);
 
-                _client.ReconnectTimeout = TimeSpan.FromSeconds(30);
-                _client.ReconnectionHappened.Subscribe(info =>
+                Client.ReconnectTimeout = TimeSpan.FromSeconds(30);
+                Client.ReconnectionHappened.Subscribe(info =>
                     Writter.Warning($"Reconnection happened, type: {info.Type}"));
 
 
-                _client.MessageReceived.Subscribe(msg => {
+                Client.MessageReceived.Subscribe(msg => {
+
                     _service.ReadResponse(msg);
                 });
 
-                _client.Start();
+                Client.Start();
 
 
                 var startTimeSpan = TimeSpan.Zero;
@@ -56,24 +60,13 @@ namespace MusicBot.Core.Services.DiscordClient
 
                 var timer = new System.Threading.Timer((e) =>
                 {
-                    _client.Send("{\"op\": 1, \"d\": 11}");
+                    Client.Send("{\"op\": 1, \"d\": 11}");
                     
                     Writter.Warning("Heartbeat!");
                 }, null, startTimeSpan, periodTimeSpan);
 
                 Identify();
 
-                var join = new
-                {
-                    op = 4,
-                    d = new
-                    {
-                        guild_id = "595353831919845407",
-                        channel_id = "595690897111515154",
-                        self_mute = false,
-                        self_deaf = false
-                    }
-                };
 
                 exitEvent.WaitOne();
 
@@ -92,7 +85,7 @@ namespace MusicBot.Core.Services.DiscordClient
                 Op = 2,
                 Data = new IdentifyPayloadData()
                 {
-                    Intents = 513,
+                    Intents = 98303,
                     Token = AppConstant.DiscordToken,
                     Properties = new Properties()
                     {
@@ -103,7 +96,7 @@ namespace MusicBot.Core.Services.DiscordClient
                 }
             };
 
-            _client.SendPayload(identify);
+            Client.SendPayload(identify);
         }
 
         public void UseLogger(ILogger logger)

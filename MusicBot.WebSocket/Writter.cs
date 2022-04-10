@@ -18,21 +18,25 @@ namespace MusicBot.WebSocket
         public static void Info(string content)
         {
             var date = DateTime.Now;
+            Console.Write(" ");
             _messeges.Add(new Messege($"[{date.ToString("H-mm-ss")}] " + content, ConsoleColor.Cyan));
         }
         public static void Warning(string content)
         {
             var date = DateTime.Now;
+            Console.Write(" ");
             _messeges.Add(new Messege($"[{date.ToString("H-mm-ss")}] " + content, ConsoleColor.Yellow));
         }
         public static void Error(string content)
         {
             var date = DateTime.Now;
+            Console.Write(" ");
             _messeges.Add(new Messege($"[{date.ToString("H-mm-ss")}] " + content, ConsoleColor.Red));
         }
         public static void Critical(string content)
         {
             var date = DateTime.Now;
+            Console.Write(" ");
             _messeges.Add(new Messege($"[{date.ToString("H-mm-ss")}] " + content, ConsoleColor.Magenta));
         }
 
@@ -40,9 +44,10 @@ namespace MusicBot.WebSocket
         {
             _messeges = new List<Messege>();
             Task.Run(() => {
+                //Thread.Sleep(5000);
                 while (true)
                 {
-                    Thread.Sleep(100);
+                    Thread.Sleep(10);
                     var item = _messeges.FirstOrDefault();
                     if (item != null)
                     {

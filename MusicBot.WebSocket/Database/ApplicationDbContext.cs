@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MusicBot.WebSocket.Database;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,6 +15,7 @@ namespace MusicBot.Core.Database
         }
         public virtual DbSet<GuildEntity> Guilds { get; set; }
         public virtual DbSet<ChannelEntity> Channels { get; set; }
+        public virtual DbSet<UserEntity> Users { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
